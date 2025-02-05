@@ -63,10 +63,10 @@ function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensi
             height: 1,
             curveSegments: 32, // Increase curve segments for smoother curves
             bevelEnabled: true,
-            bevelThickness: 0.2,
-            bevelSize: 0.1,
+            bevelThickness: 0.1, // Increase bevel thickness for more roundness
+            bevelSize: 0.2, // Increase bevel size for more roundness
             bevelOffset: 0,
-            bevelSegments: 16, // Increase bevel segments for smoother bevels
+            bevelSegments: 12, // Increase bevel segments for smoother bevels
           });
 
           const material = new THREE.ShaderMaterial({
@@ -85,7 +85,7 @@ function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensi
           });
 
           const mesh = new THREE.Mesh(geometry, material);
-          mesh.position.x = index * 3; // Adjust spacing between characters
+          mesh.position.x = index * 4; // Adjust spacing between characters
           if (groupRef.current) {
             groupRef.current.add(mesh);
           }

@@ -1,8 +1,9 @@
 'use client';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import * as THREE from 'three';
 import 'tailwindcss/tailwind.css';
+import Welcome from '../components/WelcomeScreen';
 
 const Scene = dynamic(() => import('../components/Scene'), { ssr: false });
 
@@ -13,6 +14,9 @@ type FontOption = typeof fontOptions[number];
 type TextureOption = typeof textureOptions[number];
 
 export default function Home() {
+  const [showApp, setShowApp] = useState(false);
+
+  // Kinetic Text State
   const [text, setText] = useState('KINETIC TYPE');
   const [color, setColor] = useState(new THREE.Color('#FFFFFF'));
   const [stretchIntensity, setStretchIntensity] = useState(1);
@@ -23,27 +27,25 @@ export default function Home() {
   const [font, setFont] = useState<FontOption>('Bodoni');
   const [texture, setTexture] = useState<TextureOption>('Mirror');
 
-  const toggleMic = () => {
-    setIsMicActive(!isMicActive);
-  };
+  if (!showApp) {
+    return <Welcome onStart={() => setShowApp(true)} />;
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white font-bodoni p-8">
-      {/* Header */}
-      <h1 className="text-6xl font-bold mb-8">Kinetic Text App</h1>
+    <section className="flex relative flex-col items-center justify-center min-h-screen bg-black text-white font-primary p-8">
+    <div className="flex items-center justify-center min-h-screen bg-black text-white font-primary p-8">
+      <h1 className="text-8xl justify-center border-3 border-white font-bold mb-8">Kinetic Text App</h1>
 
-      {/* Input Fields */}
       <div className="mb-4 w-full max-w-md">
-        <label className="block mb-2 text-gray-400">Enter Text:</label>
+        <label className="block mb-2 bg-transparent text-gray-400">Enter Text:</label>
         <input
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          className="border border-white p-2 w-full bg-black text-white rounded-md"
+          className="border border-white p-2 w-full bg-transparent text-white rounded-md"
         />
       </div>
 
-      {/* Font & Texture Select */}
       <div className="flex gap-4 mb-4">
         <select
           value={font}
@@ -70,8 +72,8 @@ export default function Home() {
         </select>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-col gap-4 w-full max-w-md">
+      {/* Sliders */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         {[
           { label: 'Stretch Intensity', value: stretchIntensity, setter: setStretchIntensity },
           { label: 'Wave Intensity', value: waveIntensity, setter: setWaveIntensity },
@@ -93,10 +95,10 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Floating Toolbar */}
+      {/* Microphone Button */}
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4 bg-black p-2 rounded-xl border border-white">
         <button
-          onClick={toggleMic}
+          onClick={() => setIsMicActive(!isMicActive)}
           className={`w-12 h-12 flex items-center justify-center rounded-lg border border-white ${
             isMicActive ? 'bg-white text-black' : 'bg-black text-white'
           } hover:bg-white hover:text-black transition-colors`}
@@ -120,5 +122,7 @@ export default function Home() {
         />
       </div>
     </div>
+      </section>
+   
   );
 }
