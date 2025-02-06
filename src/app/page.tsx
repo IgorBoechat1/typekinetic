@@ -124,7 +124,7 @@ export default function Home() {
               isMicActive ? 'bg-white text-black' : 'bg-black text-white'
             } hover:bg-white hover:text-black transition-colors`}
           >
-            🎤
+            MICROPHONE
           </button>
         </div>
 
