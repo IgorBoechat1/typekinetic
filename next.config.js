@@ -1,13 +1,7 @@
-const webpack = require('webpack');
 const path = require('path');
 
-const nextConfig = {
+module.exports = {
   webpack: (config) => {
-    config.plugins.push(
-      new webpack.ProvidePlugin({
-        THREE: 'three',
-      })
-    );
     config.module.rules.push({
       test: /\.(glsl|vs|fs)$/,
       loader: 'shader-loader',
@@ -19,6 +13,7 @@ const nextConfig = {
     });
     return config;
   },
+  sassOptions: {
+    includePaths: [path.join(__dirname, 'styles')],
+  },
 };
-
-module.exports = nextConfig;

@@ -4,11 +4,9 @@ import dynamic from 'next/dynamic';
 import * as THREE from 'three';
 import 'tailwindcss/tailwind.css';
 import Welcome from '../components/WelcomeScreen';
-import MultipleSelect from '../components/MultipleSelect';
 import Box from '@mui/material/Box';
-import Input from '@mui/material/Input';
 import Slider from '@mui/material/Slider';
-import { SliderProps } from '@mui/material/Slider';
+import { Input } from '@heroui/react';
 
 const Scene = dynamic(() => import('../components/Scene'), { ssr: false });
 
@@ -53,41 +51,42 @@ export default function Home() {
           justifyContent="center"
         >
           <Input
+            isReadOnly={false}
+            className="max-w-xs"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Enter Text"
-            inputProps={ariaLabel}
-            sx={{
-              color: 'white',
-              borderColor: 'white',
-              '& .MuiInput-underline:before': {
-                borderBottomColor: 'white',
-              },
-              '& .MuiInput-underline:hover:not(.Mui-disabled):before': {
-                borderBottomColor: 'white',
-              },
-              '& .MuiInput-underline:after': {
-                borderBottomColor: 'white',
-              },
-            }}
-            fullWidth
+            label="Text"
+            type="text"
+            variant="bordered"
           />
         </Box>
 
         <div className="flex gap-4 mb-4">
-          <MultipleSelect
-            label="Font"
-            options={fontOptions}
-            selectedValue={font}
-            onChange={(value) => setFont(value as FontOption)}
-          />
+          <select
+            className="select select-bordered select-lg w-full max-w-xs"
+            value={font}
+            onChange={(e) => setFont(e.target.value as FontOption)}
+          >
+            <option disabled selected>Choose Font</option>
+            {fontOptions.map((fontOption) => (
+              <option key={fontOption} value={fontOption}>
+                {fontOption}
+              </option>
+            ))}
+          </select>
 
-          <MultipleSelect
-            label="Texture"
-            options={textureOptions}
-            selectedValue={texture}
-            onChange={(value) => setTexture(value as TextureOption)}
-          />
+          <select
+            className="select select-bordered select-lg w-full max-w-xs"
+            value={texture}
+            onChange={(e) => setTexture(e.target.value as TextureOption)}
+          >
+            <option disabled selected>Choose Texture</option>
+            {textureOptions.map((textureOption) => (
+              <option key={textureOption} value={textureOption}>
+                {textureOption}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Sliders */}
@@ -102,7 +101,6 @@ export default function Home() {
             <div key={label} className="w-64">
               <label className="block mb-2 text-gray-400">{label} Intensity:</label>
               <Slider
-                size="small"
                 value={value}
                 min={0}
                 max={10}
