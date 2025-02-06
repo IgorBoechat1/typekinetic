@@ -1,15 +1,16 @@
 'use client';
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 import vertexShader from '../shaders/vertexShader';
+import fragmentShader from '../shaders/fragmentShader';
 import mirrorShader from '../shaders/mirrorShader';
 import glassShader from '../shaders/glassShader';
 import linesShader from '../shaders/linesShader';
 import randomShader from '../shaders/randomShader';
-import fragmentShader from '@/shaders/fragmentShader';
+
 
 const fontFiles = {
   Playfair: '/assets/Playfair.json',
@@ -22,11 +23,11 @@ const fontFiles = {
   DinerFat: '/assets/DinerFat.json',
   LeagueGothic: '/assets/LeagueGothic.json',
   FancyPants: '/assets/FancyPants.json',
-  db: '/assets/20db.json',
+  db: '/assets/db.json',
   Seaside: '/assets/Seaside.json',
 };
 
-const textureShaders = {
+const textureFiles = {
   Mirror: mirrorShader,
   Glass: glassShader,
   Lines: linesShader,
@@ -43,14 +44,14 @@ interface TextProps {
   displacementIntensity: number;
   isMicActive: boolean;
   font: keyof typeof fontFiles;
-  texture: keyof typeof textureShaders;
+ 
 }
 
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
-function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensity, displacementIntensity, isMicActive, font, texture }: TextProps) {
+function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensity, displacementIntensity, isMicActive, font }: TextProps) {
   const groupRef = useRef<THREE.Group>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const dataArrayRef = useRef<Uint8Array | null>(null);
@@ -69,37 +70,39 @@ function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensi
             font: font,
             size: 3,
             height: 1,
-            curveSegments: 32, // Increase curve segments for smoother curves
+            curveSegments: 128, // Increase curve segments for smoother curves
             bevelEnabled: true,
-            bevelThickness: 0.1, // Increase bevel thickness for more roundness
+            bevelThickness: 0.2, // Increase bevel thickness for more roundness
             bevelSize: 0.2, // Increase bevel size for more roundness
             bevelOffset: 0,
-            bevelSegments: 12, // Increase bevel segments for smoother bevels
+            bevelSegments: 36, // Increase bevel segments for smoother bevels
           });
 
           const material = new THREE.ShaderMaterial({
             vertexShader,
-            fragmentShader: textureShaders[texture],
+            fragmentShader: fragmentShader,
             uniforms: {
-              uTime: { value: 0 },
-              uStretchIntensity: { value: stretchIntensity },
-              uWaveIntensity: { value: waveIntensity },
-              uLiquifyIntensity: { value: liquifyIntensity },
-              uDisplacementIntensity: { value: displacementIntensity },
-              uColor: { value: color },
-              uResolution: { value: new THREE.Vector2(size.width, size.height) },
-              uSoundData: { value: 0 }, // Initialize sound data uniform
+              u_time: { value: 0 },
+              u_resolution: { value: new THREE.Vector2(size.width, size.height) },
+              u_color: { value: color },
+              u_lightPosition: { value: new THREE.Vector3(20, 10, 10) },
+              u_viewPosition: { value: camera.position },
+              u_soundData: { value: 0 }, // Add sound data uniform
             },
+            side: THREE.DoubleSide,
           });
 
           const mesh = new THREE.Mesh(geometry, material);
-          mesh.position.x = index * 4; // Adjust spacing between characters
+          mesh.castShadow = true; // Enable casting shadows
+          mesh.receiveShadow = true; // Enable receiving shadows
+          mesh.position.x = index * 3; // Adjust spacing between characters
+
           if (groupRef.current) {
             groupRef.current.add(mesh);
           }
         });
 
-        groupRef.current.position.set(-text.length * 2, 0, 0); // Center the text group
+        groupRef.current.position.set(-text.length * 2, 2, -2); // Center the text group
       }
     });
 
@@ -127,7 +130,7 @@ function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensi
         audioContext.close();
       }
     };
-  }, [text, color, stretchIntensity, waveIntensity, liquifyIntensity, displacementIntensity, isMicActive, font, texture, size]);
+  }, [text, color, stretchIntensity, waveIntensity, liquifyIntensity, displacementIntensity, isMicActive, font, size]);
 
   useFrame(() => {
     if (groupRef.current) {
@@ -137,9 +140,9 @@ function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensi
         const t = avgFrequency / 256;
         const easedT = easeInOutCubic(t);
         const stretch = 1 + easedT * stretchIntensity;
-        const wave = Math.sin(clock.getElapsedTime() * waveIntensity) * 0.1;
-        const liquify = Math.sin(clock.getElapsedTime() * liquifyIntensity) * 0.1;
-        const displacement = Math.sin(clock.getElapsedTime() * displacementIntensity) * 0.05; // Reduced intensity for smoother effect
+        const wave = Math.sin(clock.getElapsedTime() * waveIntensity) * 0.05; // Smoother wave effect
+        const liquify = Math.sin(clock.getElapsedTime() * liquifyIntensity) * 0.05; // Smoother liquify effect
+        const displacement = Math.sin(clock.getElapsedTime() * displacementIntensity) * 0.025; // Further reduced intensity for smoother effect
 
         groupRef.current.children.forEach((child, index) => {
           const mesh = child as THREE.Mesh;
@@ -147,13 +150,8 @@ function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensi
           mesh.position.y = wave;
           const material = mesh.material as THREE.ShaderMaterial;
           if (material.uniforms) {
-            material.uniforms.uTime.value = clock.getElapsedTime();
-            material.uniforms.uStretchIntensity.value = stretchIntensity;
-            material.uniforms.uWaveIntensity.value = waveIntensity;
-            material.uniforms.uLiquifyIntensity.value = liquifyIntensity;
-            material.uniforms.uDisplacementIntensity.value = displacementIntensity;
-            material.uniforms.uResolution.value.set(size.width, size.height);
-            material.uniforms.uSoundData.value = t; // Update sound data uniform
+            material.uniforms.u_time.value = clock.getElapsedTime();
+            material.uniforms.u_soundData.value = t; // Update sound data uniform
           }
 
           // Apply sound-reactive displacement effect to individual characters
@@ -168,10 +166,10 @@ function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensi
         const intersects = raycaster.current.intersectObjects(groupRef.current.children);
 
         if (intersects.length > 0) {
-          const stretch = 1 + Math.sin(clock.getElapsedTime() * stretchIntensity) * 0.1;
-          const wave = Math.sin(clock.getElapsedTime() * waveIntensity) * 0.1;
-          const liquify = Math.sin(clock.getElapsedTime() * liquifyIntensity) * 0.1;
-          const displacement = Math.sin(clock.getElapsedTime() * displacementIntensity) * 0.05;
+          const stretch = 1 + Math.sin(clock.getElapsedTime() * stretchIntensity) * 0.05;
+          const wave = Math.sin(clock.getElapsedTime() * waveIntensity) * 0.05;
+          const liquify = Math.sin(clock.getElapsedTime() * liquifyIntensity) * 0.05;
+          const displacement = Math.sin(clock.getElapsedTime() * displacementIntensity) * 0.025;
 
           groupRef.current.children.forEach((child) => {
             const mesh = child as THREE.Mesh;
@@ -179,13 +177,7 @@ function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensi
             mesh.position.y = wave;
             const material = mesh.material as THREE.ShaderMaterial;
             if (material.uniforms) {
-              material.uniforms.uTime.value = clock.getElapsedTime();
-              material.uniforms.uStretchIntensity.value = stretchIntensity;
-              material.uniforms.uWaveIntensity.value = waveIntensity;
-              material.uniforms.uLiquifyIntensity.value = liquifyIntensity;
-              material.uniforms.uDisplacementIntensity.value = displacementIntensity;
-              material.uniforms.uResolution.value.set(size.width, size.height);
-              material.uniforms.uSoundData.value = 1; // Set sound data to 1 for hover effect
+              material.uniforms.u_time.value = clock.getElapsedTime();
             }
           });
         } else {

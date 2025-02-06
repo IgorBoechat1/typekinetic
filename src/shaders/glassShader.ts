@@ -3,7 +3,6 @@ const glassShader = `
 
 uniform float uTime;
 uniform vec2 uResolution;
-uniform float uSoundData;
 varying vec2 vUv;
 
 float N11(float n) {
@@ -99,8 +98,7 @@ void main() {
         vec3 nebulVal = nebula(uv, scale, i) * 0.7;
         col += visible * (layerColor(uv, i, scale) + nebulVal);
     }
-    col *= uSoundData; // Make the color reactive to sound
-    col *= 10.5; // Increase brightness
+    col *= 0.5; // Adjust brightness for smoother effect
     gl_FragColor = vec4(col, 1.0);
 }
 `;

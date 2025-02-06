@@ -1,11 +1,8 @@
 const vertexShader = `
+uniform float u_time;
 varying vec2 vUv;
 varying vec3 vPos;
 varying vec3 vNormal;
-
-uniform float uTime;
-uniform float uDisplacementIntensity;
-uniform float uSoundData;
 
 void main() {
   vUv = uv;
@@ -13,8 +10,9 @@ void main() {
   vNormal = normal;
 
   vec3 newPosition = position;
-  newPosition.z += sin(position.x * 3.0 + uTime * 2.0) * uDisplacementIntensity * uSoundData;
-  newPosition.z += sin(position.y * 2.0 + uTime * 3.0) * uDisplacementIntensity * uSoundData;
+  newPosition.x += sin(position.y * 5.0 + u_time) * 0.1;
+  newPosition.y += cos(position.x * 5.0 + u_time) * 0.1;
+
   gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
 }
 `;

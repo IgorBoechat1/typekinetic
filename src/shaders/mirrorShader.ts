@@ -2,6 +2,7 @@ const mirrorShader = `
 uniform float uTime;
 uniform vec3 uColor;
 uniform vec2 uResolution;
+uniform sampler2D uTexture;
 varying vec3 vPosition;
 
 vec3 spectral_colour(float l) {
@@ -21,19 +22,33 @@ vec3 spectral_colour(float l) {
 
 void main() {
   vec2 fragCoord = gl_FragCoord.xy;
+  vec2 uv = 1.5 * (2.0 * fragCoord - uResolution) / uResolution.y;
   vec2 p = (2.0 * fragCoord - uResolution) / min(uResolution.x, uResolution.y);
-  p *= 2.0;
+  p *= 1.0; // Reduce the scaling factor for smaller effect
 
   for (int i = 0; i < 8; i++) {
     vec2 newp = vec2(
-      p.y + cos(p.x + uTime) - sin(p.y * cos(uTime * 0.2)),
-      p.x - sin(p.y - uTime) - cos(p.x * sin(uTime * 0.3))
+      p.y + 0.3 * cos(p.x + uTime) - 0.3 * sin(p.y * cos(uTime * 0.2)), // Reduce the intensity of transformations
+      p.x - 0.3 * sin(p.y - uTime) - 0.3 * cos(p.x * sin(uTime * 0.3))  // Reduce the intensity of transformations
     );
     p = newp;
   }
 
   vec3 color = spectral_colour(p.y * 50.0 + 500.0 + sin(uTime * 0.6));
-  gl_FragColor = vec4(color, 1.0);
+
+  // Light effect
+  vec3 light_color = vec3(0.9, 0.65, 0.5);
+  float light = 0.1 / distance(normalize(uv), uv);
+  if (length(uv) < 1.0) {
+    light *= 0.1 / distance(normalize(uv), uv);
+  }
+  vec3 lightEffect = light * light_color;
+
+  // Texture blending
+  vec4 textureColor = texture2D(uTexture, uv);
+  vec3 finalColor = mix(color, textureColor.rgb, 0.5) + lightEffect;
+
+  gl_FragColor = vec4(finalColor, 1.0);
 }
 `;
 

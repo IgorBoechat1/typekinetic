@@ -1,12 +1,11 @@
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import mirrorShader from '@/shaders/mirrorShader';
+import glassShader from '@/shaders/glassShader';
+import linesShader from '@/shaders/linesShader';
+import randomShader from '@/shaders/randomShader';
 import TextMesh from '@/components/TextMesh';
-import mirrorShader from '../shaders/mirrorShader';
-import glassShader from '../shaders/glassShader';
-import linesShader from '../shaders/linesShader';
-import randomShader from '../shaders/randomShader';
-import fragmentShader from '@/shaders/fragmentShader';
 
 const fontFiles = {
   Playfair: '/assets/Playfair.json',
@@ -19,16 +18,15 @@ const fontFiles = {
   DinerFat: '/assets/DinerFat.json',
   LeagueGothic: '/assets/LeagueGothic.json',
   FancyPants: '/assets/FancyPants.json',
-  db: '/assets/20db.json',
+  db: '/assets/db.json',
   Seaside: '/assets/Seaside.json',
 };
 
-const textureShaders = {
+const textureFiles = {
   Mirror: mirrorShader,
   Glass: glassShader,
   Lines: linesShader,
   Random: randomShader,
-  Fragment: fragmentShader,
 };
 
 interface SceneProps {
@@ -40,7 +38,7 @@ interface SceneProps {
   displacementIntensity: number;
   isMicActive: boolean;
   font: keyof typeof fontFiles;
-  texture: keyof typeof textureShaders;
+  texture: keyof typeof textureFiles;
 }
 
 export default function Scene({
@@ -55,9 +53,19 @@ export default function Scene({
   texture,
 }: SceneProps) {
   return (
-    <Canvas style={{ height: '100vh' }}> {/* Increased canvas height */}
-      <ambientLight intensity={1.5} />
-      <pointLight position={[20, 10, 10]} intensity={2.5} />
+    <Canvas style={{ height: '100vh' }} shadows> {/* Enable shadows */}
+      <ambientLight intensity={3.5} />
+      
+      <spotLight
+        position={[20, 10, 10]}
+        intensity={15.5}
+        angle={1}
+        penumbra={2.5}
+        castShadow
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+      />
+      
       <TextMesh
         text={text}
         color={color}
@@ -67,18 +75,17 @@ export default function Scene({
         displacementIntensity={displacementIntensity}
         isMicActive={isMicActive}
         font={font}
-        texture={texture}
+        
       />
+      
       <OrbitControls
-        // Adjust the maximum and minimum polar angles to allow flipping
-        maxPolarAngle={Math.PI} // Allow full rotation vertically
-        minPolarAngle={0} // Allow full rotation vertically
-        // Adjust the maximum and minimum azimuth angles to limit horizontal rotation
-        maxAzimuthAngle={Math.PI / 2} // Limit horizontal rotation to 90 degrees
-        minAzimuthAngle={-Math.PI / 2} // Limit horizontal rotation to -90 degrees
-        enableZoom={true} // Enable zooming
-        maxDistance={20} // Maximum zoom-out distance
-        minDistance={2} // Minimum zoom-in distance
+        maxPolarAngle={Math.PI}
+        minPolarAngle={0}
+        maxAzimuthAngle={Math.PI / 2}
+        minAzimuthAngle={-Math.PI / 2}
+        enableZoom={true}
+        maxDistance={20}
+        minDistance={2}
       />
     </Canvas>
   );
