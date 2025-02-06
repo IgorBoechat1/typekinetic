@@ -7,7 +7,7 @@ import Welcome from '../components/WelcomeScreen';
 
 const Scene = dynamic(() => import('../components/Scene'), { ssr: false });
 
-const fontOptions = ['Playfair', 'Monigue', 'Cocogoose', 'Bodoni'] as const;
+const fontOptions = ['Playfair', 'Monigue', 'Cocogoose', 'Bodoni', 'AfterShok', 'DinerFat', 'db', 'FancyPants', 'Batuphat', 'Barrio', 'Seaside'] as const;
 const textureOptions = ['Mirror', 'Glass', 'Lines', 'Fragment', 'Random'] as const;
 
 type FontOption = typeof fontOptions[number];

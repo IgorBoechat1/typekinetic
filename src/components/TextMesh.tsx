@@ -16,6 +16,14 @@ const fontFiles = {
   Monigue: '/assets/Monigue.json',
   Cocogoose: '/assets/Cocogoose.json',
   Bodoni: '/assets/Bodoni.json',
+  AfterShok: '/assets/AfterShok.json',
+  Batuphat: '/assets/Batuphat.json',
+  Barrio: '/assets/Barrio.json',
+  DinerFat: '/assets/DinerFat.json',
+  LeagueGothic: '/assets/LeagueGothic.json',
+  FancyPants: '/assets/FancyPants.json',
+  db: '/assets/20db.json',
+  Seaside: '/assets/Seaside.json',
 };
 
 const textureShaders = {
