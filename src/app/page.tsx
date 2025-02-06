@@ -4,6 +4,11 @@ import dynamic from 'next/dynamic';
 import * as THREE from 'three';
 import 'tailwindcss/tailwind.css';
 import Welcome from '../components/WelcomeScreen';
+import MultipleSelect from '../components/MultipleSelect';
+import Box from '@mui/material/Box';
+import Input from '@mui/material/Input';
+import Slider from '@mui/material/Slider';
+import { SliderProps } from '@mui/material/Slider';
 
 const Scene = dynamic(() => import('../components/Scene'), { ssr: false });
 
@@ -13,10 +18,11 @@ const textureOptions = ['Mirror', 'Glass', 'Lines', 'Fragment', 'Random', 'Stand
 type FontOption = typeof fontOptions[number];
 type TextureOption = typeof textureOptions[number];
 
+const ariaLabel = { 'aria-label': 'description' };
+
 export default function Home() {
   const [showApp, setShowApp] = useState(false);
 
-  // Kinetic Text State
   const [text, setText] = useState('TYPE');
   const [color, setColor] = useState(new THREE.Color('#FFFFFF'));
   const [displacementIntensity, setDisplacementIntensity] = useState(1);
@@ -28,47 +34,60 @@ export default function Home() {
   const [font, setFont] = useState<FontOption>('Bodoni');
   const [texture, setTexture] = useState<TextureOption>('Mirror');
 
-  
+  if (!showApp) {
+    return <Welcome onStart={() => setShowApp(true)} />;
+  }
 
   return (
     <section className="flex relative flex-col items-center justify-center min-h-screen bg-black text-white font-primary p-8">
-      <div className="flex items-center justify-center min-h-screen bg-black text-white font-primary p-8">
-        <h1 className="text-8xl justify-center border-3 border-white font-bold mb-8">Kinetic Text App</h1>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white font-primary p-8">
+        <h1 className="text-8xl font-bold mb-8 border-3 border-white">Kinetic Text App</h1>
 
-        <div className="mb-4 w-full max-w-md">
-          <label className="block mb-2 bg-transparent text-gray-400">Enter Text:</label>
-          <input
-            type="text"
+        <Box
+          component="form"
+          sx={{ '& > :not(style)': { m: 1 } }}
+          noValidate
+          autoComplete="off"
+          className="mb-4 w-full max-w-md"
+          display="flex"
+          justifyContent="center"
+        >
+          <Input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="border border-white p-2 w-full bg-transparent text-white rounded-md"
+            placeholder="Enter Text"
+            inputProps={ariaLabel}
+            sx={{
+              color: 'white',
+              borderColor: 'white',
+              '& .MuiInput-underline:before': {
+                borderBottomColor: 'white',
+              },
+              '& .MuiInput-underline:hover:not(.Mui-disabled):before': {
+                borderBottomColor: 'white',
+              },
+              '& .MuiInput-underline:after': {
+                borderBottomColor: 'white',
+              },
+            }}
+            fullWidth
           />
-        </div>
+        </Box>
 
         <div className="flex gap-4 mb-4">
-          <select
-            value={font}
-            onChange={(e) => setFont(e.target.value as FontOption)}
-            className="border border-white p-2 bg-black text-white rounded-md"
-          >
-            {fontOptions.map((fontOption) => (
-              <option key={fontOption} value={fontOption}>
-                {fontOption}
-              </option>
-            ))}
-          </select>
+          <MultipleSelect
+            label="Font"
+            options={fontOptions}
+            selectedValue={font}
+            onChange={(value) => setFont(value as FontOption)}
+          />
 
-          <select
-            value={texture}
-            onChange={(e) => setTexture(e.target.value as TextureOption)}
-            className="border border-white p-2 bg-black text-white rounded-md"
-          >
-            {textureOptions.map((textureOption) => (
-              <option key={textureOption} value={textureOption}>
-                {textureOption}
-              </option>
-            ))}
-          </select>
+          <MultipleSelect
+            label="Texture"
+            options={textureOptions}
+            selectedValue={texture}
+            onChange={(value) => setTexture(value as TextureOption)}
+          />
         </div>
 
         {/* Sliders */}
@@ -80,16 +99,18 @@ export default function Home() {
             { label: 'Wave Intensity', value: waveIntensity, setter: setWaveIntensity },
             { label: 'Fragmentation Intensity', value: fragmentationIntensity, setter: setFragmentationIntensity },
           ].map(({ label, value, setter }) => (
-            <div key={label}>
-              <label className="block mb-2 text-gray-400">{label}:</label>
-              <input
-                type="range"
-                min="0"
-                max="10"
-                step="0.1"
+            <div key={label} className="w-64">
+              <label className="block mb-2 text-gray-400">{label} Intensity:</label>
+              <Slider
+                size="small"
                 value={value}
-                onChange={(e) => setter(parseFloat(e.target.value))}
-                className="w-full cursor-pointer"
+                min={0}
+                max={10}
+                step={0.1}
+                onChange={(e: Event, newValue: number | number[]) => setter(newValue as number)}
+                aria-label={label}
+                valueLabelDisplay="auto"
+                sx={{ color: 'white' }}
               />
             </div>
           ))}
@@ -108,7 +129,7 @@ export default function Home() {
         </div>
 
         {/* 3D Scene */}
-        <div className="w-full h-[300vh] mt-8">
+        <div className="w-full h-[1500px] mt-8">
           <Scene
             text={text}
             color={color}
