@@ -8,7 +8,7 @@ import Welcome from '../components/WelcomeScreen';
 const Scene = dynamic(() => import('../components/Scene'), { ssr: false });
 
 const fontOptions = ['Playfair', 'Monigue', 'Cocogoose', 'Bodoni', 'AfterShok', 'DinerFat', 'db', 'FancyPants', 'Batuphat', 'Barrio', 'Seaside'] as const;
-const textureOptions = ['Mirror', 'Glass', 'Lines', 'Fragment', 'Random'] as const;
+const textureOptions = ['Mirror', 'Glass', 'Lines', 'Fragment', 'Random', 'Standard', 'Poser', 'Pavoi', 'Loco'] as const;
 
 type FontOption = typeof fontOptions[number];
 type TextureOption = typeof textureOptions[number];
@@ -19,17 +19,16 @@ export default function Home() {
   // Kinetic Text State
   const [text, setText] = useState('TYPE');
   const [color, setColor] = useState(new THREE.Color('#FFFFFF'));
-  const [stretchIntensity, setStretchIntensity] = useState(1);
-  const [waveIntensity, setWaveIntensity] = useState(1);
-  const [liquifyIntensity, setLiquifyIntensity] = useState(1);
   const [displacementIntensity, setDisplacementIntensity] = useState(1);
+  const [scalingIntensity, setScalingIntensity] = useState(1);
+  const [rotationIntensity, setRotationIntensity] = useState(1);
+  const [waveIntensity, setWaveIntensity] = useState(1);
+  const [fragmentationIntensity, setFragmentationIntensity] = useState(1);
   const [isMicActive, setIsMicActive] = useState(false);
   const [font, setFont] = useState<FontOption>('Bodoni');
   const [texture, setTexture] = useState<TextureOption>('Mirror');
 
-  if (!showApp) {
-    return <Welcome onStart={() => setShowApp(true)} />;
-  }
+  
 
   return (
     <section className="flex relative flex-col items-center justify-center min-h-screen bg-black text-white font-primary p-8">
@@ -75,10 +74,11 @@ export default function Home() {
         {/* Sliders */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           {[
-            { label: 'Stretch Intensity', value: stretchIntensity, setter: setStretchIntensity },
-            { label: 'Wave Intensity', value: waveIntensity, setter: setWaveIntensity },
-            { label: 'Liquify Intensity', value: liquifyIntensity, setter: setLiquifyIntensity },
             { label: 'Displacement Intensity', value: displacementIntensity, setter: setDisplacementIntensity },
+            { label: 'Scaling Intensity', value: scalingIntensity, setter: setScalingIntensity },
+            { label: 'Rotation Intensity', value: rotationIntensity, setter: setRotationIntensity },
+            { label: 'Wave Intensity', value: waveIntensity, setter: setWaveIntensity },
+            { label: 'Fragmentation Intensity', value: fragmentationIntensity, setter: setFragmentationIntensity },
           ].map(({ label, value, setter }) => (
             <div key={label}>
               <label className="block mb-2 text-gray-400">{label}:</label>
@@ -108,14 +108,15 @@ export default function Home() {
         </div>
 
         {/* 3D Scene */}
-        <div className="w-full h-[1500px] mt-8">
+        <div className="w-full h-[300vh] mt-8">
           <Scene
             text={text}
             color={color}
-            stretchIntensity={stretchIntensity}
-            waveIntensity={waveIntensity}
-            liquifyIntensity={liquifyIntensity}
             displacementIntensity={displacementIntensity}
+            scalingIntensity={scalingIntensity}
+            rotationIntensity={rotationIntensity}
+            waveIntensity={waveIntensity}
+            fragmentationIntensity={fragmentationIntensity}
             isMicActive={isMicActive}
             font={font}
             texture={texture}

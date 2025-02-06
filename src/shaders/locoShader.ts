@@ -1,7 +1,4 @@
-const glassShader = `
-#ifdef GL_ES
-precision mediump float;
-#endif
+const locoShader = `
 
 uniform float u_time;
 uniform vec2 u_mouse;
@@ -9,8 +6,8 @@ uniform vec2 u_resolution;
 uniform vec3 u_color;
 uniform vec3 u_lightPosition;
 uniform vec3 u_viewPosition;
-uniform float u_soundData;
 
+varying vec2 vUv;
 varying vec3 vPos;
 varying vec3 vNormal;
 
@@ -36,15 +33,12 @@ void main(void) {
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
     vec3 specular = vec3(0.5) * spec;
 
-    vec3 ambient = vec3(0.6) * u_color;
+    vec3 ambient = vec3(0.1) * u_color;
 
     vec3 finalColor = (ambient + diffuse + specular) * baseColor;
-
-    // Increase brightness based on sound data
-    finalColor *= 2.5 + u_soundData;
 
     gl_FragColor = vec4(finalColor, 1.0);
 }
 `;
 
-export default glassShader;
+export default locoShader;

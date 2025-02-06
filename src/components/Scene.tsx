@@ -1,11 +1,29 @@
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import mirrorShader from '@/shaders/mirrorShader';
-import glassShader from '@/shaders/glassShader';
-import linesShader from '@/shaders/linesShader';
-import randomShader from '@/shaders/randomShader';
-import TextMesh from '@/components/TextMesh';
+import * as THREE from 'three';
+import mirrorShader from '../shaders/mirrorShader';
+import glassShader from '../shaders/glassShader';
+import linesShader from '../shaders/linesShader';
+import randomShader from '../shaders/randomShader';
+import poserShader from '../shaders/poserShader';
+import pavoiShader from '../shaders/pavoiShader';
+import locoShader from '../shaders/locoShader';
+import fragmentShader from '../shaders/fragmentShader';
+import { standardFragmentShader } from '../shaders/standardShader';
+import TextMesh from './TextMesh';
+
+const textureFiles = {
+  Mirror: mirrorShader,
+  Glass: glassShader,
+  Lines: linesShader,
+  Random: randomShader,
+  Poser: poserShader,
+  Pavoi: pavoiShader,
+  Loco: locoShader,
+  Fragment: fragmentShader,
+  Standard: standardFragmentShader,
+};
 
 const fontFiles = {
   Playfair: '/assets/Playfair.json',
@@ -22,20 +40,14 @@ const fontFiles = {
   Seaside: '/assets/Seaside.json',
 };
 
-const textureFiles = {
-  Mirror: mirrorShader,
-  Glass: glassShader,
-  Lines: linesShader,
-  Random: randomShader,
-};
-
 interface SceneProps {
   text: string;
   color: THREE.Color;
-  stretchIntensity: number;
-  waveIntensity: number;
-  liquifyIntensity: number;
   displacementIntensity: number;
+  scalingIntensity: number;
+  rotationIntensity: number;
+  waveIntensity: number;
+  fragmentationIntensity: number;
   isMicActive: boolean;
   font: keyof typeof fontFiles;
   texture: keyof typeof textureFiles;
@@ -44,48 +56,36 @@ interface SceneProps {
 export default function Scene({
   text,
   color,
-  stretchIntensity,
-  waveIntensity,
-  liquifyIntensity,
   displacementIntensity,
+  scalingIntensity,
+  rotationIntensity,
+  waveIntensity,
+  fragmentationIntensity,
   isMicActive,
   font,
   texture,
 }: SceneProps) {
   return (
-    <Canvas style={{ height: '100vh' }} shadows> {/* Enable shadows */}
-      <ambientLight intensity={3.5} />
-      
-      <spotLight
-        position={[20, 10, 10]}
-        intensity={15.5}
-        angle={1}
-        penumbra={2.5}
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-      />
-      
+    <Canvas camera={{ position: [0, 0, 10], fov: 50 }} style={{ height: '80vh' }}>
+      <ambientLight intensity={0.5} />
+      <pointLight position={[10, 10, 10]} />
       <TextMesh
         text={text}
         color={color}
-        stretchIntensity={stretchIntensity}
-        waveIntensity={waveIntensity}
-        liquifyIntensity={liquifyIntensity}
         displacementIntensity={displacementIntensity}
+        scalingIntensity={scalingIntensity}
+        rotationIntensity={rotationIntensity}
+        waveIntensity={waveIntensity}
+        fragmentationIntensity={fragmentationIntensity}
         isMicActive={isMicActive}
         font={font}
-        
+        texture={texture}
       />
-      
       <OrbitControls
-        maxPolarAngle={Math.PI}
-        minPolarAngle={0}
-        maxAzimuthAngle={Math.PI / 2}
-        minAzimuthAngle={-Math.PI / 2}
+        enablePan={true}
         enableZoom={true}
-        maxDistance={20}
-        minDistance={2}
+        maxPolarAngle={Math.PI / 3}
+        minPolarAngle={Math.PI / 2}
       />
     </Canvas>
   );

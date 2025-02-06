@@ -56,12 +56,12 @@ void main() {
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
     vec3 specular = vec3(0.5) * spec;
 
-    vec3 ambient = vec3(0.1) * u_color;
+    vec3 ambient = vec3(0.6) * u_color;
 
     vec3 finalColor = (ambient + diffuse + specular) * color;
 
     // Increase brightness
-    finalColor *= 1.5;
+    finalColor *= 4.5;
 
     gl_FragColor = vec4(finalColor, 1.0);
 }

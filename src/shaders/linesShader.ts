@@ -1,53 +1,56 @@
-const linesShader = `
+const glassShader = `
 varying vec2 vUv;
 varying vec3 vPos;
+varying vec3 vNormal;
 
-uniform float uTime;
-uniform vec3 uColor;
-uniform sampler2D uTexture;
-uniform vec2 uResolution;
-uniform float uSoundData;
+uniform float u_time;
+uniform vec3 u_color;
+uniform vec3 u_lightPosition;
+uniform vec3 u_viewPosition;
+uniform float u_soundData;
+uniform vec2 u_resolution;
 
-const vec4 col_a = vec4(224.0 / 255.0, 0.0, 61.0 / 255.0, 1.0);
-const vec4 col_b = vec4(0.0, 41.0 / 255.0, 136.0 / 255.0, 1.0);
-
-vec3 palette(float t, vec3 a, vec3 b, vec3 c, vec3 d) {
-    return a + b * cos(6.28318 * (c * t + d));
-}
-
-float plot(float edge, float val, float t) {
-    return step(edge, val) - step(edge + t, val);
-}
-
-float smoothplot(float edge, float val, float t, float s) {
-    return smoothstep(edge - t - s, edge - t, val) - smoothstep(edge + t, edge + t + s, val);
-}
+#define t u_time
+#define r u_resolution.xy
 
 void main() {
-    vec2 R = uResolution.xy;
-    vec2 U = vUv;
-    vec2 G = R / 8.0;
-    vec2 I = round(U * G) / G;
-    vec2 V = 2.0 * U - 1.0;
-    V *= V;
+    vec3 c;
+    float l, z = t;
+    vec2 fragCoord = vUv * u_resolution;
 
-    G = G * (U - I) + 0.5;
+    for (int i = 0; i < 3; i++) {
+        vec2 uv, p = fragCoord.xy / r;
+        uv = p;
+        p -= 0.5;
+        p.x *= r.x / r.y;
+        z += 0.07;
+        l = length(p);
+        uv += p / l * (sin(z) + 1.0) * abs(sin(l * 9.0 - z - z));
+        c[i] = 0.01 / length(mod(uv, 1.0) - 0.5);
+    }
 
-    vec4 O = vec4(0.0);
-    vec4 P = texture2D(uTexture, vec2(U.x, I.y));  // horizontal RGB profiles
-    O = mix(O, vec4(1.0), smoothstep(1.0, 0.0, abs(G.y - length(P.rgb) / sqrt(3.0)) / fwidth(G.y)));
+    vec3 color = c / l;
 
-    P = texture2D(uTexture, vec2(I.x, U.y));       // vertical RGB profiles
-    O = mix(O, vec4(1.0), smoothstep(1.0, 0.0, abs(G.x - length(P.rgb) / sqrt(3.0)) / fwidth(G.x)));
+    // Calculate basic lighting
+    vec3 normal = normalize(vNormal);
+    vec3 lightDir = normalize(u_lightPosition - vPos);
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = diff * u_color;
 
-    O = sqrt(O);  // to sRGB
+    vec3 viewDir = normalize(u_viewPosition - vPos);
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    vec3 specular = vec3(0.5) * spec;
 
-    // Apply sound data to the color
-    vec3 soundColor = mix(vec3(0.0), uColor, uSoundData);
-    O.rgb *= soundColor;
+    vec3 ambient = vec3(0.4) * u_color;
 
-    gl_FragColor = O;
+    vec3 finalColor = (ambient + diffuse + specular) * color;
+
+    // Increase brightness
+    finalColor *= 4.5;
+
+    gl_FragColor = vec4(finalColor, 1.0);
 }
 `;
 
-export default linesShader;
+export default glassShader;

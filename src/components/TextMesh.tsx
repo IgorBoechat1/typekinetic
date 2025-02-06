@@ -5,12 +5,15 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 import vertexShader from '../shaders/vertexShader';
-import fragmentShader from '../shaders/fragmentShader';
 import mirrorShader from '../shaders/mirrorShader';
 import glassShader from '../shaders/glassShader';
 import linesShader from '../shaders/linesShader';
 import randomShader from '../shaders/randomShader';
-
+import fragmentShader from '../shaders/fragmentShader';
+import { standardVertexShader, standardFragmentShader } from '../shaders/standardShader';
+import poserShader from '@/shaders/poserShader';
+import pavoiShader from '@/shaders/pavoiShader';
+import locoShader from '@/shaders/locoShader';
 
 const fontFiles = {
   Playfair: '/assets/Playfair.json',
@@ -27,34 +30,45 @@ const fontFiles = {
   Seaside: '/assets/Seaside.json',
 };
 
-const textureFiles = {
+const fragmentShaders = {
   Mirror: mirrorShader,
   Glass: glassShader,
   Lines: linesShader,
   Random: randomShader,
   Fragment: fragmentShader,
+  Standard: standardFragmentShader,
+  Poser: poserShader,
+  Loco: locoShader,
+  Pavoi: pavoiShader,
+  Goo: '',
 };
 
 interface TextProps {
   text: string;
   color: THREE.Color;
-  stretchIntensity: number;
-  waveIntensity: number;
-  liquifyIntensity: number;
   displacementIntensity: number;
+  scalingIntensity: number;
+  rotationIntensity: number;
+  waveIntensity: number;
+  fragmentationIntensity: number;
   isMicActive: boolean;
   font: keyof typeof fontFiles;
- 
+  texture: keyof typeof fragmentShaders | 'Standard';
 }
 
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
-function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensity, displacementIntensity, isMicActive, font }: TextProps) {
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+function TextMesh({ text, color, displacementIntensity, scalingIntensity, rotationIntensity, waveIntensity, fragmentationIntensity, isMicActive, font, texture }: TextProps) {
   const groupRef = useRef<THREE.Group>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const dataArrayRef = useRef<Uint8Array | null>(null);
+  const initialPositionsRef = useRef<THREE.Vector3[]>([]);
   const clock = new THREE.Clock();
   const { size, mouse, camera } = useThree();
   const raycaster = useRef(new THREE.Raycaster());
@@ -64,6 +78,7 @@ function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensi
     loader.load(fontFiles[font], (font) => {
       if (groupRef.current) {
         groupRef.current.clear(); // Clear previous characters
+        initialPositionsRef.current = []; // Clear previous initial positions
 
         text.split('').forEach((char, index) => {
           const geometry = new TextGeometry(char, {
@@ -78,31 +93,52 @@ function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensi
             bevelSegments: 36, // Increase bevel segments for smoother bevels
           });
 
-          const material = new THREE.ShaderMaterial({
-            vertexShader,
-            fragmentShader: fragmentShader,
-            uniforms: {
-              u_time: { value: 0 },
-              u_resolution: { value: new THREE.Vector2(size.width, size.height) },
-              u_color: { value: color },
-              u_lightPosition: { value: new THREE.Vector3(20, 10, 10) },
-              u_viewPosition: { value: camera.position },
-              u_soundData: { value: 0 }, // Add sound data uniform
-            },
-            side: THREE.DoubleSide,
-          });
+          let material;
+          if (texture === 'Standard') {
+            material = new THREE.ShaderMaterial({
+              vertexShader: standardVertexShader,
+              fragmentShader: standardFragmentShader,
+              uniforms: {
+                u_color: { value: color },
+                u_lightPosition: { value: new THREE.Vector3(0, 10, 10) },
+                u_viewPosition: { value: camera.position },
+              },
+              side: THREE.DoubleSide,
+            });
+          } else {
+            material = new THREE.ShaderMaterial({
+              vertexShader,
+              fragmentShader: fragmentShaders[texture],
+              uniforms: {
+                u_time: { value: 0 },
+                u_resolution: { value: new THREE.Vector2(size.width, size.height) },
+                u_color: { value: color },
+                u_lightPosition: { value: new THREE.Vector3(0, 10, 10) },
+                u_viewPosition: { value: camera.position },
+                u_soundData: { value: 0 }, // Add sound data uniform
+                u_displacementIntensity: { value: displacementIntensity },
+                u_scalingIntensity: { value: scalingIntensity },
+                u_rotationIntensity: { value: rotationIntensity },
+                u_waveIntensity: { value: waveIntensity },
+                u_fragmentationIntensity: { value: fragmentationIntensity },
+              },
+              side: THREE.DoubleSide,
+            });
+          }
 
           const mesh = new THREE.Mesh(geometry, material);
           mesh.castShadow = true; // Enable casting shadows
           mesh.receiveShadow = true; // Enable receiving shadows
           mesh.position.x = index * 3; // Adjust spacing between characters
 
+          initialPositionsRef.current.push(mesh.position.clone()); // Store initial position
+
           if (groupRef.current) {
             groupRef.current.add(mesh);
           }
         });
 
-        groupRef.current.position.set(-text.length * 2, 2, -2); // Center the text group
+        groupRef.current.position.set(-text.length * 2, 2, 0); // Center the text group
       }
     });
 
@@ -130,7 +166,7 @@ function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensi
         audioContext.close();
       }
     };
-  }, [text, color, stretchIntensity, waveIntensity, liquifyIntensity, displacementIntensity, isMicActive, font, size]);
+  }, [text, color, displacementIntensity, scalingIntensity, rotationIntensity, waveIntensity, fragmentationIntensity, isMicActive, font, texture, size]);
 
   useFrame(() => {
     if (groupRef.current) {
@@ -139,56 +175,60 @@ function TextMesh({ text, color, stretchIntensity, waveIntensity, liquifyIntensi
         const avgFrequency = dataArrayRef.current.reduce((a, b) => a + b, 0) / dataArrayRef.current.length;
         const t = avgFrequency / 256;
         const easedT = easeInOutCubic(t);
-        const stretch = 1 + easedT * stretchIntensity;
-        const wave = Math.sin(clock.getElapsedTime() * waveIntensity) * 0.05; // Smoother wave effect
-        const liquify = Math.sin(clock.getElapsedTime() * liquifyIntensity) * 0.05; // Smoother liquify effect
-        const displacement = Math.sin(clock.getElapsedTime() * displacementIntensity) * 0.025; // Further reduced intensity for smoother effect
 
         groupRef.current.children.forEach((child, index) => {
           const mesh = child as THREE.Mesh;
-          mesh.scale.set(1, stretch, 1);
-          mesh.position.y = wave;
           const material = mesh.material as THREE.ShaderMaterial;
           if (material.uniforms) {
             material.uniforms.u_time.value = clock.getElapsedTime();
             material.uniforms.u_soundData.value = t; // Update sound data uniform
+            material.uniforms.u_displacementIntensity.value = displacementIntensity;
+            material.uniforms.u_scalingIntensity.value = scalingIntensity;
+            material.uniforms.u_rotationIntensity.value = rotationIntensity;
+            material.uniforms.u_waveIntensity.value = waveIntensity;
+            material.uniforms.u_fragmentationIntensity.value = fragmentationIntensity;
           }
 
-          // Apply sound-reactive displacement effect to individual characters
+          // Apply sound-reactive effects to individual characters
           const time = clock.getElapsedTime();
           const frequency = dataArrayRef.current![index % dataArrayRef.current!.length] / 256;
-          const offset = displacement * frequency * Math.sin(time * 2 + index * 0.5); // Smoother displacement
-          mesh.position.y += isNaN(offset) ? 0 : offset; // Ensure no NaN values
+
+          // Get initial position
+          const initialPosition = initialPositionsRef.current[index];
+
+          // Displacement
+          const displacement = displacementIntensity * frequency * Math.sin(time * 2 + index * 0.5);
+          mesh.position.y = lerp(mesh.position.y, initialPosition.y + (isNaN(displacement) ? 0 : displacement), 0.1);
+
+          // Scaling & Stretching
+          const scale = 1 + scalingIntensity * frequency;
+          mesh.scale.set(lerp(mesh.scale.x, scale, 0.1), lerp(mesh.scale.y, scale, 0.1), lerp(mesh.scale.z, scale, 0.1));
+
+          // Rotation & Skewing
+          const rotation = rotationIntensity * frequency;
+          mesh.rotation.z = lerp(mesh.rotation.z, rotation, 0.1);
+
+          // Wave & Ripple Distortion
+          const wave = Math.sin(time * waveIntensity) * 0.05;
+          mesh.position.x = lerp(mesh.position.x, initialPosition.x + wave, 0.1);
+
+          // Fragmentation & Noise
+          const fragmentation = fragmentationIntensity * frequency;
+          mesh.position.z = lerp(mesh.position.z, initialPosition.z + fragmentation, 0.1);
         });
       } else {
-        // Make the text mesh reactive to the cursor
-        raycaster.current.setFromCamera(mouse, camera);
-        const intersects = raycaster.current.intersectObjects(groupRef.current.children);
-
-        if (intersects.length > 0) {
-          const stretch = 1 + Math.sin(clock.getElapsedTime() * stretchIntensity) * 0.05;
-          const wave = Math.sin(clock.getElapsedTime() * waveIntensity) * 0.05;
-          const liquify = Math.sin(clock.getElapsedTime() * liquifyIntensity) * 0.05;
-          const displacement = Math.sin(clock.getElapsedTime() * displacementIntensity) * 0.025;
-
-          groupRef.current.children.forEach((child) => {
-            const mesh = child as THREE.Mesh;
-            mesh.scale.set(1, stretch, 1);
-            mesh.position.y = wave;
-            const material = mesh.material as THREE.ShaderMaterial;
-            if (material.uniforms) {
-              material.uniforms.u_time.value = clock.getElapsedTime();
-            }
-          });
-        } else {
-          // Reset the effects when not hovering
-          groupRef.current.children.forEach((child) => {
-            const mesh = child as THREE.Mesh;
-            mesh.scale.set(1, 1, 1);
-            mesh.position.y = 0;
-          });
-        }
+        // Reset the effects when not hovering
+        groupRef.current.children.forEach((child, index) => {
+          const mesh = child as THREE.Mesh;
+          const initialPosition = initialPositionsRef.current[index];
+          mesh.scale.set(1, 1, 1);
+          mesh.position.set(initialPosition.x, initialPosition.y, initialPosition.z);
+          mesh.rotation.set(0, 0, 0);
+        });
       }
+
+      // Rotate the entire group
+      groupRef.current.rotation.y += 0.001; // Adjust the rotation speed as needed
     }
   });
 

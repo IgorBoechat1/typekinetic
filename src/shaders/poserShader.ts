@@ -1,8 +1,4 @@
-const glassShader = `
-#ifdef GL_ES
-precision mediump float;
-#endif
-
+const poserShader = `
 uniform float u_time;
 uniform vec2 u_mouse;
 uniform vec2 u_resolution;
@@ -11,19 +7,24 @@ uniform vec3 u_lightPosition;
 uniform vec3 u_viewPosition;
 uniform float u_soundData;
 
+varying vec2 vUv;
 varying vec3 vPos;
 varying vec3 vNormal;
 
+float interpolate(float x, float min_x, float max_x) {
+    return x * max_x + (2.0 - x) * min_x;
+}
+
+float normsin(float x) {
+    return (sin(x) + 1.0) / 2.0;
+}
+
 void main(void) {
-    vec2 position = (gl_FragCoord.xy / u_resolution.xy) + u_mouse / 4.0;
+    vec2 position = vUv;
 
-    float color = 0.0;
-    color += sin(position.x * cos(u_time / 15.0) * 80.0) + cos(position.y * cos(u_time / 15.0) * 10.0);
-    color += sin(position.y * sin(u_time / 10.0) * 40.0) + cos(position.x * sin(u_time / 25.0) * 40.0);
-    color += sin(position.x * sin(u_time / 5.0) * 10.0) + sin(position.y * sin(u_time / 35.0) * 80.0);
-    color *= sin(u_time / 10.0) * 0.5;
-
-    vec3 baseColor = vec3(color, color * 0.5, sin(color + u_time / 3.0) * 0.75);
+    float color = normsin(10.0 * position.x + interpolate(normsin(25.0 * position.y + 10.0 * u_mouse.x), 11.0, 25.0) + 
+                          10.0 * position.y + interpolate(normsin(25.0 * position.x + 10.0 * u_mouse.y), 5.0, 25.0) + 2.0 * u_time);
+    vec3 baseColor = vec3(color);
 
     // Calculate basic lighting
     vec3 normal = normalize(vNormal);
@@ -36,7 +37,7 @@ void main(void) {
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
     vec3 specular = vec3(0.5) * spec;
 
-    vec3 ambient = vec3(0.6) * u_color;
+    vec3 ambient = vec3(0.1) * u_color;
 
     vec3 finalColor = (ambient + diffuse + specular) * baseColor;
 
@@ -47,4 +48,4 @@ void main(void) {
 }
 `;
 
-export default glassShader;
+export default poserShader;
