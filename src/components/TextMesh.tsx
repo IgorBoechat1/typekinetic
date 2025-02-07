@@ -84,7 +84,7 @@ function TextMesh({ text, color, displacementIntensity, scalingIntensity, rotati
           const geometry = new TextGeometry(char, {
             font: font,
             size: 3,
-            height: 1,
+            height: 0.5,
             curveSegments: 128, // Increase curve segments for smoother curves
             bevelEnabled: true,
             bevelThickness: 0.2, // Increase bevel thickness for more roundness

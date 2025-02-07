@@ -4,9 +4,9 @@ import dynamic from 'next/dynamic';
 import * as THREE from 'three';
 import 'tailwindcss/tailwind.css';
 import Welcome from '../components/WelcomeScreen';
-import Box from '@mui/material/Box';
-import Slider from '@mui/material/Slider';
 import { Input } from '@heroui/react';
+import { Slider } from '@mui/material';
+import Box from '@mui/material/Box';
 
 const Scene = dynamic(() => import('../components/Scene'), { ssr: false });
 
